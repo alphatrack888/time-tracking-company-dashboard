@@ -13,7 +13,7 @@ import { SiSpeedtest } from "react-icons/si";
 
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
-import logo from "../../../public/Images/logo.png";
+import logo from "../../assets/Images/logo.png";
 import { Button } from "@mui/material";
 
 export default function Sidebar() {

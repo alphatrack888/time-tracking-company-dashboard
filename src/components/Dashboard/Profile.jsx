@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, IconButton, TextField } from "@mui/material";
 import { FiEdit } from "react-icons/fi";
-import profile from "../../../public/Images/profile.png";
+import profile from "../../assets/Images/profile.png";
 import {
   useEditProfileMutation,
   useUserProfileQuery,

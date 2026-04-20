@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { FiEdit } from "react-icons/fi";
 import { RiLockPasswordFill } from "react-icons/ri";
-import profileImg from "../../../public/Images/profile.png";
+import profileImg from "../../assets/Images/profile.png";
 
 export default function Profile() {
   const [name, setName] = useState("Charlene Reed");

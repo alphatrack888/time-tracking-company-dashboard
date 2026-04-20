@@ -15,7 +15,7 @@ import { MdOutlineLock } from "react-icons/md";
 import { IoEye } from "react-icons/io5";
 import { IoEyeOff } from "react-icons/io5";
 
-import logInImage from "../../public/Images/logIn.png";
+import logInImage from "../assets/Images/logIn.png";
 
 import { useSignInMutation } from "../Redux/api/authApi";
 import { toast } from "sonner";
