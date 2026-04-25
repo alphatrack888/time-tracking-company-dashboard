@@ -196,10 +196,7 @@ export default function EmployeeDetailsModal({
           alignItems: "center",
         }}
       >
-        <div
-          className="bg-[#efefef] p-4 rounded-lg shadow-lg relative"
-          style={{ width: "1200px" }}
-        >
+        <div className="bg-[#efefef] p-4 rounded-lg shadow-lg relative w-[90%] max-w-[1200px] h-[90vh] overflow-y-auto">
           {selectedEmployee && (
             <div>
               {/* Top */}
@@ -238,9 +235,8 @@ export default function EmployeeDetailsModal({
               {/* Mid */}
               <div className="flex items-center">
                 <div
-                  className={`flex items-center ${
-                    activeButton === "map" ? "justify-between" : "justify-start"
-                  } w-full`}
+                  className={`flex items-center ${activeButton === "map" ? "justify-between" : "justify-start"
+                    } w-full`}
                 >
                   {activeButton === "map" && (
                     <div className="flex items-center gap-3">
@@ -428,12 +424,11 @@ export default function EmployeeDetailsModal({
 
                       <div className="flex items-center gap-5">
                         <div
-                          className={`flex items-center gap-2 font-semibold ${
-                            employeeAnalytics?.comparison?.breakHours?.trend ===
-                            "increase"
+                          className={`flex items-center gap-2 font-semibold ${employeeAnalytics?.comparison?.breakHours?.trend ===
+                              "increase"
                               ? "text-green-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           <p className="text-sm">
                             {millisecondsToHMSConverter(
@@ -449,12 +444,11 @@ export default function EmployeeDetailsModal({
                           )}
                         </div>{" "}
                         <div
-                          className={`flex items-center gap-2 font-semibold ${
-                            employeeAnalytics?.comparison?.breakHours?.trend ===
-                            "increase"
+                          className={`flex items-center gap-2 font-semibold ${employeeAnalytics?.comparison?.breakHours?.trend ===
+                              "increase"
                               ? "text-green-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           <p className="text-sm">
                             {" "}
@@ -487,12 +481,11 @@ export default function EmployeeDetailsModal({
 
                       <div className="flex items-center gap-5">
                         <div
-                          className={`flex items-center gap-2 font-semibold ${
-                            employeeAnalytics?.comparison?.breakHours?.trend ===
-                            "increase"
+                          className={`flex items-center gap-2 font-semibold ${employeeAnalytics?.comparison?.breakHours?.trend ===
+                              "increase"
                               ? "text-green-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           <p className="text-sm">
                             {millisecondsToHMSConverter(
@@ -501,19 +494,18 @@ export default function EmployeeDetailsModal({
                             )}
                           </p>
                           {employeeAnalytics?.comparison?.breakHours?.trend ===
-                          "increase" ? (
+                            "increase" ? (
                             <FaArrowTrendUp className="bg-[#D7E8F3] size-8 p-1 rounded-full" />
                           ) : (
                             <IoIosTrendingDown className="bg-[#D7E8F3] size-8 p-1 rounded-full" />
                           )}{" "}
                         </div>{" "}
                         <div
-                          className={`flex items-center gap-2 font-semibold ${
-                            employeeAnalytics?.comparison?.breakHours?.trend ===
-                            "increase"
+                          className={`flex items-center gap-2 font-semibold ${employeeAnalytics?.comparison?.breakHours?.trend ===
+                              "increase"
                               ? "text-green-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           <p className="text-sm">
                             {
@@ -523,7 +515,7 @@ export default function EmployeeDetailsModal({
                             %
                           </p>
                           {employeeAnalytics?.comparison?.breakHours?.trend ===
-                          "increase" ? (
+                            "increase" ? (
                             <FaArrowTrendUp className="bg-[#D7E8F3] size-8 p-1 rounded-full" />
                           ) : (
                             <IoIosTrendingDown className="bg-[#D7E8F3] size-8 p-1 rounded-full" />
