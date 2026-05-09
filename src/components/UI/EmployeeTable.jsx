@@ -14,6 +14,7 @@ import { GoEye } from "react-icons/go";
 import { SlLock } from "react-icons/sl";
 import { TbReport } from "react-icons/tb";
 import EmployeeReportModal from "../Modals/EmployeeReportModal";
+import { useDeleteCompanyMutation } from "../../Redux/api/employeeApi";
 
 export default function EmployeeTable({
   filteredUsers,
@@ -25,6 +26,7 @@ export default function EmployeeTable({
 }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [deleteCompany] = useDeleteCompanyMutation();
 
   const handleOpenReportModal = (employee) => {
     setSelectedEmployee(employee);
@@ -155,10 +157,10 @@ export default function EmployeeTable({
                         }}
                       >
                         <SlLock />
-                      </IconButton>
+                      </IconButton> */}
                       <IconButton
                         size="small"
-                        onClick={() => handleOpenDeleteModal(employee)}
+                        onClick={() => deleteCompany(employee._id)}
                         sx={{
                           color: "#fff",
                           fontSize: "20px",
@@ -173,7 +175,7 @@ export default function EmployeeTable({
                         }}
                       >
                         <AiTwotoneDelete />
-                      </IconButton> */}
+                      </IconButton>
                     </div>
                   </TableCell>
                 </TableRow>

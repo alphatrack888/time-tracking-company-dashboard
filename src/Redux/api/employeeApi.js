@@ -81,6 +81,23 @@ const dashboardApi = baseApi.injectEndpoints({
       },
       providesTags: ["employee"],
     }),
+    deleteCompany: builder.mutation({
+      query: (id) => {
+        const accessToken = sessionStorage.getItem("accessToken");
+        console.log("Dashboard API Token:", accessToken);
+
+        console.log("delete company", id);
+
+        return {
+          url: `/user/${id}`,
+          method: "delete",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        };
+      },
+      invalidatesTags: ["employee"],
+    }),
   }),
 });
 
@@ -90,4 +107,5 @@ export const {
   useCreatePayrollMutation,
   useEmployeeLocationByDateQuery,
   useEmployeeAnalyticsQuery,
+  useDeleteCompanyMutation
 } = dashboardApi;
