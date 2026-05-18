@@ -13,6 +13,7 @@ import ChangePassword from "../Dashboard/ChangePassword";
 import AddBreakTime from "../Dashboard/AddBreakTime";
 import Profile from "../Dashboard/Profile";
 import Subscription from "../Dashboard/Subscription";
+import SubscriptionSuccess from "../../pages/SubscriptionSuccess";
 import EmployeeLeaveList from "../Dashboard/EmployeeLeaveList";
 import ProtectedRoute from "../../utils/ProtectedRoute";
 
@@ -76,6 +77,10 @@ const router = createBrowserRouter([
           {
             path: "subscription",
             element: <Subscription />,
+          },
+          {
+            path: "subscription-success",
+            element: <SubscriptionSuccess />,
           },
           {
             path: "employee-leave-list",

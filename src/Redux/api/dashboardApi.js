@@ -55,6 +55,20 @@ const dashboardApi = baseApi.injectEndpoints({
       },
       providesTags: ["user"],
     }),
+    createCheckoutSession: builder.mutation({
+      query: (body) => {
+        const accessToken = sessionStorage.getItem("accessToken");
+        return {
+          url: "/subscriptions/checkout-session",
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body,
+        };
+      },
+    }),
   }),
 });
 
@@ -63,4 +77,5 @@ export const {
   useEmployeeByYearQuery,
   useProjectByYearQuery,
   useGetSubscriptionPlansQuery,
+  useCreateCheckoutSessionMutation,
 } = dashboardApi;

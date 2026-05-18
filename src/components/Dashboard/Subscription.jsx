@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent, Button, CircularProgress } from "@mui/material";
-import { useGetSubscriptionPlansQuery } from "../../Redux/api/dashboardApi";
+import {
+  useGetSubscriptionPlansQuery,
+  useCreateCheckoutSessionMutation,
+} from "../../Redux/api/dashboardApi";
 import { GoDotFill } from "react-icons/go";
+import { toast } from "sonner";
 
 export default function Subscription() {
   const {
@@ -8,8 +13,34 @@ export default function Subscription() {
     isLoading,
     isError,
   } = useGetSubscriptionPlansQuery();
+  const [createCheckoutSession] = useCreateCheckoutSessionMutation();
+  const [activePlanId, setActivePlanId] = useState(null);
+
   const subscriptionPlans = subscriptionPlansData?.data || [];
   console.log("subscriptionPlans", subscriptionPlans);
+
+  const handleSubscribe = async (planId) => {
+    try {
+      setActivePlanId(planId);
+      const res = await createCheckoutSession({ planId }).unwrap();
+      
+      if (res?.success && res?.data?.url) {
+        toast.success("Redirecting to checkout payment page...");
+        window.location.href = res.data.url;
+      } else {
+        toast.error(res?.message || "Failed to create checkout session.");
+        setActivePlanId(null);
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      const errMsg =
+        error?.data?.message ||
+        error?.message ||
+        "An error occurred during checkout initialization.";
+      toast.error(errMsg);
+      setActivePlanId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -63,14 +94,40 @@ export default function Subscription() {
                   <p className="text-sm text-justify">
                     {subscription.description}
                   </p>
-                  {subscription.features.map((feature, index) => (
-                    <div
-                      key={index}
-                      className="text-sm flex items-center gap-1"
-                    >
-                      <GoDotFill /> <p>{feature}</p>
-                    </div>
-                  ))}
+                  <div className="flex flex-col gap-2 mb-4">
+                    {subscription.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        className="text-sm flex items-center gap-1"
+                      >
+                        <GoDotFill /> <p>{feature}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    variant="contained"
+                    disabled={!!activePlanId}
+                    onClick={() => handleSubscribe(subscription._id || subscription.id)}
+                    sx={{
+                      marginTop: "auto",
+                      backgroundColor: "#3F80AE",
+                      color: "white",
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      fontSize: "1rem",
+                      borderRadius: "6px",
+                      py: 1,
+                      "&:hover": {
+                        backgroundColor: "#2e6287",
+                      },
+                    }}
+                  >
+                    {activePlanId === (subscription._id || subscription.id) ? (
+                      <CircularProgress size={24} sx={{ color: "white" }} />
+                    ) : (
+                      "Subscribe"
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
