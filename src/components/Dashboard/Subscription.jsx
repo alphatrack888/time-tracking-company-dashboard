@@ -19,26 +19,12 @@ export default function Subscription() {
   const subscriptionPlans = subscriptionPlansData?.data || [];
   console.log("subscriptionPlans", subscriptionPlans);
 
-  const handleSubscribe = async (planId) => {
-    try {
-      setActivePlanId(planId);
-      const res = await createCheckoutSession({ planId }).unwrap();
-      
-      if (res?.success && res?.data?.url) {
-        toast.success("Redirecting to checkout payment page...");
-        window.location.href = res.data.url;
-      } else {
-        toast.error(res?.message || "Failed to create checkout session.");
-        setActivePlanId(null);
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      const errMsg =
-        error?.data?.message ||
-        error?.message ||
-        "An error occurred during checkout initialization.";
-      toast.error(errMsg);
-      setActivePlanId(null);
+  const handleSubscribe = (paymentUrl) => {
+    if (paymentUrl) {
+      toast.success("Redirecting to checkout payment page...");
+      window.location.href = paymentUrl;
+    } else {
+      toast.error("Payment URL not found for this plan.");
     }
   };
 
@@ -106,8 +92,7 @@ export default function Subscription() {
                   </div>
                   <Button
                     variant="contained"
-                    disabled={!!activePlanId}
-                    onClick={() => handleSubscribe(subscription._id || subscription.id)}
+                    onClick={() => handleSubscribe(subscription.paymentUrl)}
                     sx={{
                       marginTop: "auto",
                       backgroundColor: "#3F80AE",
@@ -122,11 +107,7 @@ export default function Subscription() {
                       },
                     }}
                   >
-                    {activePlanId === (subscription._id || subscription.id) ? (
-                      <CircularProgress size={24} sx={{ color: "white" }} />
-                    ) : (
-                      "Subscribe"
-                    )}
+                    Subscribe
                   </Button>
                 </div>
               </CardContent>
