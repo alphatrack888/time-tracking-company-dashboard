@@ -22,7 +22,7 @@ export default function Subscription() {
   const handleSubscribe = (paymentUrl) => {
     if (paymentUrl) {
       toast.success("Redirecting to checkout payment page...");
-      window.location.href = paymentUrl;
+      window.open(paymentUrl, "_blank");
     } else {
       toast.error("Payment URL not found for this plan.");
     }
