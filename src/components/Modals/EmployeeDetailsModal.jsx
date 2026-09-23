@@ -14,7 +14,6 @@ import { FaArrowTrendUp } from "react-icons/fa6";
 import { MdCheckCircle, MdOutlineFileUpload } from "react-icons/md";
 
 import { toast } from "sonner";
-import { getImageUrl } from "../../utils/baseUrl";
 import {
   useCreatePayrollMutation,
   useEmployeeAnalyticsQuery,
@@ -95,8 +94,6 @@ export default function EmployeeDetailsModal({
   const totalHours =
     employeeAnalytics?.currentPeriod?.workingHours +
     employeeAnalytics?.currentPeriod?.breakHours;
-
-  const imageUrl = getImageUrl();
 
   const handleButtonClick = (buttonType) => {
     setActiveButton(buttonType);
@@ -204,7 +201,7 @@ export default function EmployeeDetailsModal({
                 <p className="font-medium mb-1">View Details</p>
                 <div className="flex items-center gap-10">
                   <img
-                    src={`${imageUrl}/${selectedEmployee?.profile}`}
+                    src={selectedEmployee?.profile}
                     alt={selectedEmployee.name}
                     style={{
                       width: "120px",

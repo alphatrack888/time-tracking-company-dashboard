@@ -26,7 +26,6 @@ import {
   useDeleteProjectMutation,
   useGetProjectNotesQuery,
 } from "../../Redux/api/projectApi";
-import { getImageUrl } from "../../utils/baseUrl";
 import { toast } from "sonner";
 import AssignEmployeeModal from "../Modals/AssignEmployeeModal";
 import dayjs from "dayjs";
@@ -52,8 +51,6 @@ export default function RunningProjects() {
   const projectNote = projectNoteData?.data || [];
 
   console.log("projectNoteData", projectNote);
-
-  const imageUrl = getImageUrl();
 
   const handleFilterStatus = (e) => {
     const status = e.target.value;
@@ -348,7 +345,7 @@ export default function RunningProjects() {
               selectedProject.images.map((img, idx) => (
                 <img
                   key={idx}
-                  src={`${imageUrl}/${img}`}
+                  src={img}
                   alt={`${selectedProject.title} ${idx + 1}`}
                   className="w-1/3 rounded-lg object-cover"
                   style={{ maxHeight: "200px" }}
@@ -556,7 +553,7 @@ export default function RunningProjects() {
                             <div key={index} className="mb-2">
                               <audio controls>
                                 <source
-                                  src={`${imageUrl}/${audioFile}`}
+                                  src={audioFile}
                                   type="audio/mp3"
                                 />
                                 Your browser does not support the audio element.
@@ -576,7 +573,7 @@ export default function RunningProjects() {
                           {note.images.map((image, index) => (
                             <img
                               key={index}
-                              src={`${imageUrl}/${image}`}
+                              src={image}
                               alt={`Note Image ${index + 1}`}
                               className="w-20 h-20 object-cover rounded-lg"
                             />
@@ -625,7 +622,6 @@ export default function RunningProjects() {
         open={openEditModal}
         onClose={() => setOpenEditModal(false)}
         project={selectedProject}
-        imageBaseUrl={imageUrl}
         onUpdated={refetch}
       />
     </div>

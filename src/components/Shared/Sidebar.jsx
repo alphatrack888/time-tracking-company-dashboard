@@ -10,6 +10,7 @@ import { LuCookingPot } from "react-icons/lu";
 import { MdLogout } from "react-icons/md";
 import { FaPodcast } from "react-icons/fa6";
 import { SiSpeedtest } from "react-icons/si";
+import { PiBellSimpleRingingBold } from "react-icons/pi";
 
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
@@ -80,6 +81,11 @@ export default function Sidebar() {
             to: "/employee-leave-list",
             icon: <SiSpeedtest fontSize={24} />,
             label: "Employee Leave List",
+          },
+          {
+            to: "/notifications",
+            icon: <PiBellSimpleRingingBold fontSize={24} />,
+            label: "Notifications",
           },
         ].map(({ to, icon, label }) => (
           <NavLink

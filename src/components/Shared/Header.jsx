@@ -1,9 +1,7 @@
-import { PiBellSimpleRingingBold } from "react-icons/pi";
-
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button, CircularProgress } from "@mui/material";
 import { useUserProfileQuery } from "../../Redux/api/userApi";
-import { getImageUrl } from "../../utils/baseUrl";
+import NotificationBell from "./NotificationBell";
 
 export default function Header() {
   const { data: profileApiData, isLoading, isError } = useUserProfileQuery();
@@ -11,7 +9,6 @@ export default function Header() {
   console.log("Profile Data", profileData);
 
   const navigate = useNavigate();
-  const imageUrl = getImageUrl();
 
   const handleProfileClick = () => {
     navigate("/profile");
@@ -31,11 +28,7 @@ export default function Header() {
   return (
     <div className="flex items-center justify-end bg-[#fff] w-full px-10 py-4">
       <div className="flex items-center gap-4">
-        {/* <div className="bg-[#f0f0f0] p-2 rounded-full hover:bg-[#E0E1E2] transition-colors duration-300">
-          <Link to="/notifications">
-            <PiBellSimpleRingingBold fontSize={24} />
-          </Link>
-        </div> */}
+        <NotificationBell />
         <Button
           sx={{
             color: "black",
@@ -49,7 +42,7 @@ export default function Header() {
         >
           <div className="flex items-center gap-2">
             <img
-              src={`${imageUrl}/${profileData.profile}`}
+              src={profileData.profile}
               alt=""
               className="size-10 rounded-full border border-white"
             />

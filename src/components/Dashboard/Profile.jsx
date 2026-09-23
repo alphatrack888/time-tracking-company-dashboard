@@ -6,7 +6,6 @@ import {
   useEditProfileMutation,
   useUserProfileQuery,
 } from "../../Redux/api/userApi";
-import { getImageUrl } from "../../utils/baseUrl";
 import { toast } from "sonner";
 
 export default function Profile() {
@@ -21,8 +20,6 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [profileImage, setProfileImage] = useState(profile);
   const [imagePreview, setImagePreview] = useState(null);
-
-  const imageUrl = getImageUrl();
 
   useEffect(() => {
     if (profileData) {
@@ -89,12 +86,7 @@ export default function Profile() {
       <div className="relative">
         <div className="bg-[#efefef]">
           <img
-            src={
-              imagePreview ||
-              (typeof profileImage === "string"
-                ? `${imageUrl}/${profileImage}` // If profileImage is a URL, display it
-                : profileImage) // If it's a file, show base64 preview
-            }
+            src={imagePreview || profileImage}
             alt="Profile Image"
             className="rounded-full w-32 h-32 object-cover"
           />
