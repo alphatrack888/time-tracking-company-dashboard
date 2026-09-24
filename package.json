@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "docker:build:prod": "docker build --platform linux/arm64 --target prod -t shfayetwt/time-tracking-company-dashboard:latest .",
+    "docker:build:prod": "docker build --platform linux/arm64 --target prod --build-arg VITE_BASE_URL=$VITE_BASE_URL --build-arg VITE_GMAP_API_KEY=$VITE_GMAP_API_KEY -t shfayetwt/time-tracking-company-dashboard:latest .",
     "docker:push": "docker push shfayetwt/time-tracking-company-dashboard:latest",
     "docker:release": "npm run docker:build:prod && npm run docker:push"
   },
