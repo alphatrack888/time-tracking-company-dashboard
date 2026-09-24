@@ -29,7 +29,11 @@ export default function NotificationBell() {
     useMarkAllNotificationsReadMutation();
 
   const notifications = data?.data?.data ?? [];
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  // Server-computed true unread count (Phase 12) — filtering just the
+  // fetched dropdown page would undercount once unread items exceed
+  // DROPDOWN_LIMIT (e.g. a long-running session with the bell never opened).
+  const unreadCount =
+    data?.data?.meta?.unreadCount ?? notifications.filter((n) => !n.isRead).length;
   const open = Boolean(anchorEl);
 
   const handleMarkRead = async (id) => {
