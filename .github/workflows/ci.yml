@@ -1,0 +1,132 @@
+name: CI/CD - Checks, Build, Push & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Serialize main releases so an older build cannot deploy after a newer one.
+concurrency:
+  group: company-dashboard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VITE_BASE_URL: https://api.alphatrack.app/api/v1
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build production dashboard
+        env:
+          VITE_GMAP_API_KEY: ci-build-only
+        run: npm run build
+
+  build-and-push:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check deployment directory is configured
+        env:
+          COMPANY_DEPLOY_PATH: ${{ secrets.COMPANY_DEPLOY_PATH }}
+          VITE_GMAP_API_KEY: ${{ secrets.VITE_GMAP_API_KEY }}
+        run: |
+          case "$COMPANY_DEPLOY_PATH" in
+            /*) ;;
+            *) echo "::error::Set COMPANY_DEPLOY_PATH to the existing absolute server directory containing docker-compose.yml."; exit 1 ;;
+          esac
+          if [ -z "$VITE_GMAP_API_KEY" ]; then
+            echo "::error::Set the VITE_GMAP_API_KEY repository secret."
+            exit 1
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ARM64 image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: prod
+          platforms: linux/arm64
+          push: true
+          build-args: |
+            VITE_BASE_URL=${{ env.VITE_BASE_URL }}
+            VITE_GMAP_API_KEY=${{ secrets.VITE_GMAP_API_KEY }}
+          tags: |
+            shfayetwt/time-tracking-company-dashboard:latest
+            shfayetwt/time-tracking-company-dashboard:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Deploy published image and wait for health
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          COMPANY_DEPLOY_PATH: ${{ secrets.COMPANY_DEPLOY_PATH }}
+          COMPANY_IMAGE: shfayetwt/time-tracking-company-dashboard@${{ needs.build-and-push.outputs.digest }}
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_SSH_USER || 'deploy' }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          envs: COMPANY_DEPLOY_PATH,COMPANY_IMAGE
+          command_timeout: 8m
+          script: |
+            set -eu
+            cd "$COMPANY_DEPLOY_PATH"
+            test -f docker-compose.yml
+            command -v curl >/dev/null
+
+            # Keep the existing Compose project and server configuration.
+            # Override only the image with the exact digest built by this run.
+            compose_company() {
+              printf 'services:\n  company-dashboard:\n    image: %s\n' "$COMPANY_IMAGE" |
+                docker compose -f docker-compose.yml -f - "$@"
+            }
+
+            compose_company pull company-dashboard
+            compose_company up -d --no-build --no-deps --wait --wait-timeout 120 company-dashboard
+            compose_company ps company-dashboard
+            curl --fail --show-error --silent --max-time 15 http://127.0.0.1:8082/ -o /dev/null

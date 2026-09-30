@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { Card, CardContent, Button, CircularProgress } from "@mui/material";
 import {
   useGetSubscriptionPlansQuery,
-  useCreateCheckoutSessionMutation,
 } from "../../Redux/api/dashboardApi";
 import { GoDotFill } from "react-icons/go";
 import { toast } from "sonner";
@@ -13,8 +11,6 @@ export default function Subscription() {
     isLoading,
     isError,
   } = useGetSubscriptionPlansQuery();
-  const [createCheckoutSession] = useCreateCheckoutSessionMutation();
-  const [activePlanId, setActivePlanId] = useState(null);
 
   const subscriptionPlans = subscriptionPlansData?.data || [];
   console.log("subscriptionPlans", subscriptionPlans);
