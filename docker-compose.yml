@@ -1,14 +1,8 @@
+# Production runtime; images are built and published by GitHub Actions.
 services:
   company-dashboard:
-    build:
-      context: .
-      target: prod
     image: shfayetwt/time-tracking-company-dashboard:latest
     container_name: company-dashboard
     restart: unless-stopped
-    networks:
-      - web
-
-networks:
-  web:
-    external: true
+    ports:
+      - "127.0.0.1:8082:80"

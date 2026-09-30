@@ -4,10 +4,10 @@ ARG VITE_BASE_URL
 ARG VITE_GMAP_API_KEY
 ENV VITE_BASE_URL=$VITE_BASE_URL
 ENV VITE_GMAP_API_KEY=$VITE_GMAP_API_KEY
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-RUN yarn build
+RUN npm run build
 
 FROM nginx:alpine AS prod
 COPY --from=build /app/dist /usr/share/nginx/html
