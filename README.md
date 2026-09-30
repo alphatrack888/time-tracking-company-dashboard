@@ -8,7 +8,7 @@ Keep the current process running until the new container is verified.
 
 Pull requests targeting main install with npm ci, lint and build. Pushes to main
 also publish the prod Docker target for linux/arm64 to
-shfayetwt/time-tracking-company-dashboard with latest and commit SHA tags.
+alphatrack888/time-tracking-company-dashboard with latest and commit SHA tags.
 SSH deployment pulls the exact published digest, waits for container health,
 and checks HTTP on 127.0.0.1:8082. Runs are serialized; failures do not
 automatically roll back. No shared web network or Caddy is required.
@@ -69,7 +69,7 @@ For later image rollback, select a previous successful commit tag and run from
 the company Compose directory:
 
 ```sh
-export COMPANY_IMAGE=shfayetwt/time-tracking-company-dashboard:<previous-commit-sha>
+export COMPANY_IMAGE=alphatrack888/time-tracking-company-dashboard:<previous-commit-sha>
 compose_company() {
   printf 'services:\n  company-dashboard:\n    image: %s\n' "$COMPANY_IMAGE" |
     docker compose -f docker-compose.yml -f - "$@"

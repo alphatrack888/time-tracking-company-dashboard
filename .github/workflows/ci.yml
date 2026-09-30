@@ -91,8 +91,8 @@ jobs:
             VITE_BASE_URL=${{ env.VITE_BASE_URL }}
             VITE_GMAP_API_KEY=${{ secrets.VITE_GMAP_API_KEY }}
           tags: |
-            shfayetwt/time-tracking-company-dashboard:latest
-            shfayetwt/time-tracking-company-dashboard:${{ github.sha }}
+            alphatrack888/time-tracking-company-dashboard:latest
+            alphatrack888/time-tracking-company-dashboard:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -106,7 +106,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           COMPANY_DEPLOY_PATH: ${{ secrets.COMPANY_DEPLOY_PATH }}
-          COMPANY_IMAGE: shfayetwt/time-tracking-company-dashboard@${{ needs.build-and-push.outputs.digest }}
+          COMPANY_IMAGE: alphatrack888/time-tracking-company-dashboard@${{ needs.build-and-push.outputs.digest }}
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_SSH_USER || 'deploy' }}
