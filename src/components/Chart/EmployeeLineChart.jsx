@@ -8,24 +8,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const convertMillisecondsToHours = (ms) => {
-  return (ms / 3600000).toFixed(2);
-};
-
 const EmployeeLineChart = ({ chartData }) => {
-  console.log("chartData", chartData);
-
-  const formattedData = chartData?.dailyBreakdown?.map((item) => ({
-    ...item,
-    workingHours: convertMillisecondsToHours(item.workingHours), // Convert workingHours to hours
-    breakHours: convertMillisecondsToHours(item.breakHours), // Convert breakHours to hours
-  }));
+  const series = chartData?.dailyBreakdown ?? [];
 
   return (
     <div style={{ width: "100%", height: 240 }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={formattedData}
+          data={series}
           margin={{
             top: 5,
             right: 30,

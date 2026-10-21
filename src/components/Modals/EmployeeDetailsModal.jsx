@@ -22,7 +22,7 @@ import {
 
 import Map from "../UI/Map";
 import dayjs from "dayjs";
-import { millisecondsToHMSConverter } from "../../utils/TimeConverter";
+import { formatHoursLabel } from "../../utils/TimeConverter";
 
 export default function EmployeeDetailsModal({
   openDetailsModal,
@@ -428,7 +428,7 @@ export default function EmployeeDetailsModal({
                             }`}
                         >
                           <p className="text-sm">
-                            {millisecondsToHMSConverter(
+                            {formatHoursLabel(
                               employeeAnalytics?.comparison?.workingHours
                                 ?.difference
                             )}
@@ -485,7 +485,7 @@ export default function EmployeeDetailsModal({
                             }`}
                         >
                           <p className="text-sm">
-                            {millisecondsToHMSConverter(
+                            {formatHoursLabel(
                               employeeAnalytics?.comparison?.breakHours
                                 ?.difference
                             )}

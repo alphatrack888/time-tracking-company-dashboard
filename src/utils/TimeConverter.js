@@ -1,3 +1,15 @@
+/** Analytics values are already hours. `8.5` becomes `8h 30m`. */
+export function formatHoursLabel(hours) {
+  const value = Number(hours);
+  if (!Number.isFinite(value)) return "0h";
+  const sign = value < 0 ? "-" : "";
+  const totalMinutes = Math.round(Math.abs(value) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (m === 0) return `${sign}${h}h`;
+  return `${sign}${h}h ${m}m`;
+}
+
 export function convertMillisecondsToHHMMSS(ms) {
   // console.log(ms);
   let totalSeconds = Math.floor(ms / 1000);
