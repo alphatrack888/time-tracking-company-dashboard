@@ -1,8 +1,8 @@
 import { PieChart, Pie, Cell, Text, Rectangle } from "recharts";
-import { convertMillisecondsToHHMMSS } from "../../utils/TimeConverter";
+import { formatHoursLabel } from "../../utils/TimeConverter";
 
 export default function EmployeeWorkingPieChart({ workingHours, totalHours }) {
-  const totalWorkingTime = convertMillisecondsToHHMMSS(workingHours);
+  const totalWorkingTime = formatHoursLabel(workingHours);
   // const totalBreakTime = convertMillisecondsToHHMMSS(breakHours);
   // const totalDuration = convertMillisecondsToHHMMSS(totalHours);
 
@@ -37,8 +37,8 @@ export default function EmployeeWorkingPieChart({ workingHours, totalHours }) {
     const textX = cx;
     const textY = cy;
 
-    const backgroundWidth = 40;
-    const backgroundHeight = 40;
+    const backgroundWidth = 72;
+    const backgroundHeight = 28;
 
     return (
       <>
@@ -55,7 +55,7 @@ export default function EmployeeWorkingPieChart({ workingHours, totalHours }) {
           y={textY + 5}
           fill="#333"
           textAnchor="middle"
-          style={{ fontWeight: "bold", fontSize: 16 }}
+          style={{ fontWeight: "bold", fontSize: 12 }}
         >
           {totalWorkingTime}
         </Text>
