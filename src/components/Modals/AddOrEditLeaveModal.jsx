@@ -18,6 +18,8 @@ import {
   useGetLeaveBalanceQuery,
   useManageLeaveMutation,
 } from "../../Redux/api/leaveApi";
+// Leavebalance fields (casualLeave, sickLeave, earnLeave, wpLeave) map to employee
+// API leave types: casual | sick | earn | wp — see constants/leaveTypes.js.
 
 export default function AddOrEditLeaveModal({
   openAddOrEditModal,

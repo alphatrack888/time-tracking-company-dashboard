@@ -24,6 +24,7 @@ import {
   useUpdateLeaveStatusMutation,
 } from "../../Redux/api/leaveApi";
 import dayjs from "dayjs";
+import { leaveTypeLabel } from "../../constants/leaveTypes";
 
 export default function EmployeeLeaveList() {
   const {
@@ -224,7 +225,7 @@ export default function EmployeeLeaveList() {
                           textTransform: "capitalize",
                         }}
                       >
-                        {employee.type}
+                        {leaveTypeLabel(employee.type)}
                       </TableCell>
                       <TableCell sx={{ textAlign: "center" }}>
                         <div
@@ -314,7 +315,7 @@ export default function EmployeeLeaveList() {
             </div>
             <div className="flex flex-col gap-5">
               <p className="font-medium">{selectedEmployee?.user.name}</p>
-              <p className="font-medium capitalize">{selectedEmployee?.type}</p>
+              <p className="font-medium">{leaveTypeLabel(selectedEmployee?.type)}</p>
               <p className="font-medium">
                 {dayjs(selectedEmployee?.from).format("MM/DD/YYYY")}
               </p>
