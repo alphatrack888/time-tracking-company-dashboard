@@ -5,6 +5,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 
@@ -27,6 +28,7 @@ const EmployeeLineChart = ({ chartData }) => {
           <XAxis dataKey="formattedDate" />
           <YAxis />
           <Tooltip />
+          <Legend />
           <Line
             type="monotone"
             dataKey="workingHours"
@@ -39,6 +41,12 @@ const EmployeeLineChart = ({ chartData }) => {
             dataKey="breakHours"
             stroke="#3F80AE"
             name="Break Time (hrs)"
+          />
+          <Line
+            type="monotone"
+            dataKey="plannedHours"
+            stroke="#C47B2A"
+            name="Planned hours"
           />
         </LineChart>
       </ResponsiveContainer>

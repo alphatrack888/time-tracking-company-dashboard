@@ -69,6 +69,33 @@ const projectApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["project"],
     }),
+    getDailyAllocations: builder.query({
+      query: (id) => {
+        const accessToken = sessionStorage.getItem("accessToken");
+        return {
+          url: `/project/${id}/daily-allocation`,
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        };
+      },
+      providesTags: (_result, _error, id) => [{ type: "dailyAllocation", id }],
+    }),
+    setDailyAllocation: builder.mutation({
+      query: ({ id, data }) => {
+        const accessToken = sessionStorage.getItem("accessToken");
+        return {
+          url: `/project/${id}/daily-allocation`,
+          method: "PUT",
+          body: data,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        };
+      },
+      invalidatesTags: (_result, _error, { id }) => [{ type: "dailyAllocation", id }],
+    }),
     getProjectNotes: builder.query({
       query: (id) => {
         const accessToken = sessionStorage.getItem("accessToken");
@@ -91,5 +118,7 @@ export const {
   useCreateProjectMutation,
   useAssignEmployeeMutation,
   useDeleteProjectMutation,
+  useGetDailyAllocationsQuery,
+  useSetDailyAllocationMutation,
   useGetProjectNotesQuery,
-} = projectApi;
+} = projectApi
