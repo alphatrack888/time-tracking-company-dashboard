@@ -24,7 +24,9 @@ import { PiNotepadBold } from "react-icons/pi";
 import {
   useAllProjectsQuery,
   useDeleteProjectMutation,
+  useGetDailyAllocationsQuery,
   useGetProjectNotesQuery,
+  useSetDailyAllocationMutation,
 } from "../../Redux/api/projectApi";
 import { toast } from "sonner";
 import AssignEmployeeModal from "../Modals/AssignEmployeeModal";
@@ -45,9 +47,17 @@ export default function RunningProjects() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [openEditModal, setOpenEditModal] = useState(false);
+  const [planEmployee, setPlanEmployee] = useState("");
+  const [planDate, setPlanDate] = useState("");
+  const [planHours, setPlanHours] = useState("");
+  const [setDailyAllocation, { isLoading: savingPlan }] = useSetDailyAllocationMutation();
 
   const { data: projectNoteData, isLoading: loadingNotes } =
     useGetProjectNotesQuery(selectedProject?._id);
+  const { data: allocationData } = useGetDailyAllocationsQuery(selectedProject?._id, {
+    skip: !openDetailsModal || !selectedProject?._id,
+  });
+  const allocations = Array.isArray(allocationData?.data) ? allocationData.data : [];
   const projectNote = projectNoteData?.data || [];
 
   console.log("projectNoteData", projectNote);
@@ -98,6 +108,46 @@ export default function RunningProjects() {
   };
 
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
+
+  useEffect(() => {
+    setPlanEmployee("");
+    setPlanDate("");
+    setPlanHours("");
+  }, [selectedProject?._id]);
+
+  const fillPlan = (row) => {
+    setPlanEmployee(row.employee);
+    setPlanDate(row.date);
+    setPlanHours(String(row.hours));
+  };
+
+  const handleSavePlan = async () => {
+    const hours = Number(planHours);
+    if (!selectedProject?._id || !planEmployee || !planDate || !(hours > 0)) return;
+    try {
+      await setDailyAllocation({
+        id: selectedProject._id,
+        data: { employee: planEmployee, date: planDate, hours },
+      }).unwrap();
+      toast.success("Daily hours saved");
+    } catch (error) {
+      toast.error(error?.data?.message || "Could not save daily hours");
+    }
+  };
+
+  const handleClearPlan = async () => {
+    if (!selectedProject?._id || !planEmployee || !planDate) return;
+    try {
+      await setDailyAllocation({
+        id: selectedProject._id,
+        data: { employee: planEmployee, date: planDate, hours: 0 },
+      }).unwrap();
+      setPlanHours("");
+      toast.success("Daily hours cleared");
+    } catch (error) {
+      toast.error(error?.data?.message || "Could not clear daily hours");
+    }
+  };
 
   const handleEditNow = () => {
     if (!selectedProject) return;
@@ -494,6 +544,104 @@ export default function RunningProjects() {
                 <p className="text-sm text-[#545454]">No employees assigned</p>
               )}
             </ul>
+          </div>
+
+          <div className="mb-5">
+            <p className="font-medium mb-2">Daily hours</p>
+            <div className="flex flex-wrap items-end gap-3 mb-3">
+              <FormControl size="small" sx={{ minWidth: 200 }} disabled={!selectedProject?.employees?.length}>
+                <InputLabel>Employee</InputLabel>
+                <Select
+                  label="Employee"
+                  value={planEmployee}
+                  onChange={(event) => setPlanEmployee(event.target.value)}
+                >
+                  <MenuItem value="" sx={{ display: "none" }} />
+                  {(selectedProject?.employees || []).map((employee) => (
+                    <MenuItem key={employee._id} value={employee._id}>
+                      {employee.name}
+                    </MenuItem>
+                  ))}
+                  {planEmployee &&
+                  !(selectedProject?.employees || []).some((employee) => employee._id === planEmployee) ? (
+                    <MenuItem value={planEmployee}>
+                      {allocations.find((row) => row.employee === planEmployee)?.name || "Employee"}
+                    </MenuItem>
+                  ) : null}
+                </Select>
+              </FormControl>
+              <label className="flex flex-col text-sm text-[#545454]">
+                Date
+                <input
+                  type="date"
+                  value={planDate}
+                  disabled={!selectedProject?.employees?.length}
+                  onChange={(event) => setPlanDate(event.target.value)}
+                  className="border border-[#ddd] rounded px-2 h-10"
+                />
+              </label>
+              <label className="flex flex-col text-sm text-[#545454]">
+                Hours
+                <input
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={planHours}
+                  disabled={!selectedProject?.employees?.length}
+                  onChange={(event) => setPlanHours(event.target.value)}
+                  className="border border-[#ddd] rounded px-2 h-10 w-24"
+                />
+              </label>
+              <Button
+                variant="contained"
+                disabled={
+                  savingPlan ||
+                  !selectedProject?.employees?.length ||
+                  !planEmployee ||
+                  !planDate ||
+                  !(Number(planHours) > 0)
+                }
+                onClick={handleSavePlan}
+                sx={{ bgcolor: "#3F80AE", textTransform: "none", height: 40 }}
+              >
+                Save
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={savingPlan || !planEmployee || !planDate}
+                onClick={handleClearPlan}
+                sx={{ textTransform: "none", height: 40 }}
+              >
+                Clear
+              </Button>
+            </div>
+            {allocations.length > 0 ? (
+              <Table sx={{ border: "1px solid #ddd", maxWidth: 520 }}>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#C3D8E6" }}>
+                    <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Hours</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allocations.map((row) => (
+                    <TableRow
+                      key={`${row.employee}-${row.date}`}
+                      hover
+                      onClick={() => fillPlan(row)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <TableCell>{row.name || "Employee"}</TableCell>
+                      <TableCell>{row.date}</TableCell>
+                      <TableCell>{row.hours}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-[#545454]">No daily hours saved</p>
+            )}
           </div>
 
           {/* Close Button */}
