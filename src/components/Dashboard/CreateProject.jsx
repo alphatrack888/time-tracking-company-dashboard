@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   TextField,
   Button,
@@ -22,6 +21,26 @@ import { useAllEmployeeQuery } from "../../Redux/api/employeeApi";
 import { useCreateProjectMutation } from "../../Redux/api/projectApi";
 import { toast } from "sonner";
 
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+const AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/mp4", "audio/x-m4a"];
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+const hoursHaveAtMostTwoDecimals = (value) =>
+  Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+
+const FieldHint = ({ children }) => (
+  <Typography variant="caption" color="text.secondary">
+    {children}
+  </Typography>
+);
+
+const FieldError = ({ message }) =>
+  message ? (
+    <Typography variant="caption" color="error">
+      {message}
+    </Typography>
+  ) : null;
+
 const CreateProject = () => {
   const { data: allEmployeeData, isLoading } = useAllEmployeeQuery();
   const allEmployee = allEmployeeData?.data?.data || [];
@@ -30,143 +49,182 @@ const CreateProject = () => {
     id: employee._id,
   }));
 
-  console.log("employees", employees);
-
   const [projectName, setProjectName] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [projectTime, setProjectTime] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [assignedEmployees, setAssignedEmployees] = useState([]);
-  const [employeeInput, setEmployeeInput] = useState("");
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [audioPreview, setAudioPreview] = useState(null);
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [openModal, setOpenModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredEmployees, setFilteredEmployees] = useState(employees);
 
-  const [createProject] = useCreateProjectMutation();
+  const [createProject, { isLoading: isCreating }] = useCreateProjectMutation();
 
-  const handleAddEmployee = () => {
-    if (selectedEmployeeId && !assignedEmployees.includes(selectedEmployeeId)) {
-      setAssignedEmployees([...assignedEmployees, selectedEmployeeId]);
-      setEmployeeInput("");
-      setSelectedEmployeeId(null);
-    }
+  const clearError = (key) => {
+    setFieldErrors((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   };
 
-  console.log("assignedEmployees", assignedEmployees);
-
-  const handleRemoveEmployee = (employee) => {
-    setAssignedEmployees(assignedEmployees.filter((emp) => emp !== employee));
+  const handleRemoveEmployee = (id) => {
+    setAssignedEmployees((current) => current.filter((emp) => emp !== id));
   };
 
   const handleSelectEmployee = (employee) => {
-    setEmployeeInput(employee.name); // Display name in input field
-    setSelectedEmployeeId(employee.id); // Store id to send to the API
-    setOpenModal(false); // Close modal after selection
+    setAssignedEmployees((current) =>
+      current.includes(employee.id) ? current : [...current, employee.id]
+    );
+    setSearchQuery("");
+    setOpenModal(false);
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!PHOTO_TYPES.includes(file.type)) {
+      setImage(null);
+      setImagePreview(null);
+      setFieldErrors((current) => ({
+        ...current,
+        photo: "Use a JPEG, PNG, or WebP photo.",
+      }));
+      return;
     }
+    if (file.size > MAX_FILE_BYTES) {
+      setImage(null);
+      setImagePreview(null);
+      setFieldErrors((current) => ({
+        ...current,
+        photo: "Photo must be 10 MB or smaller.",
+      }));
+      return;
+    }
+    setImage(file);
+    clearError("photo");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
+
   const handleAudioUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.type.startsWith("audio/")) {
-        setAudioFile(file);
-        const reader = new FileReader();
-
-        reader.onloadend = () => {
-          setAudioPreview(reader.result);
-        };
-
-        reader.readAsDataURL(file);
-        setError("");
-      } else {
-        setError("Please upload a valid audio file.");
-        setAudioFile(null);
-      }
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!AUDIO_TYPES.includes(file.type)) {
+      setAudioFile(null);
+      setAudioPreview(null);
+      setFieldErrors((current) => ({
+        ...current,
+        audio: "Use an MP3, WAV, or M4A file.",
+      }));
+      return;
     }
+    if (file.size > MAX_FILE_BYTES) {
+      setAudioFile(null);
+      setAudioPreview(null);
+      setFieldErrors((current) => ({
+        ...current,
+        audio: "Audio must be 10 MB or smaller.",
+      }));
+      return;
+    }
+    setAudioFile(file);
+    clearError("audio");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAudioPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const collectErrors = () => {
+    const errors = {};
+    const name = projectName.trim();
+    if (!name) errors.name = "Enter a project name.";
+    else if (name.length > 120) errors.name = "Name cannot exceed 120 characters.";
+
+    if (!startDate) errors.start = "Select a start date.";
+    if (!endDate) errors.end = "Select an end date.";
+    else if (startDate && endDate.isBefore(startDate, "day")) {
+      errors.end = "End date must not be before the start date.";
+    }
+
+    const hours = Number(projectTime);
+    if (projectTime === "" || Number.isNaN(hours)) {
+      errors.time = "Enter the total hours for this project.";
+    } else if (!(hours > 0)) {
+      errors.time = "Hours must be greater than 0.";
+    } else if (hours > 100000) {
+      errors.time = "Hours cannot exceed 100000.";
+    } else if (!hoursHaveAtMostTwoDecimals(hours)) {
+      errors.time = "Use at most two decimal places.";
+    }
+
+    if (!image) errors.photo = "A photo is required.";
+    const description = projectDescription.trim();
+    if (!description) errors.description = "Enter a description.";
+    else if (description.length > 2000) {
+      errors.description = "Description cannot exceed 2000 characters.";
+    }
+    return errors;
   };
 
   const handleSubmit = async () => {
-    if (
-      !projectName ||
-      !projectTime ||
-      !projectDescription ||
-      !startDate ||
-      !endDate
-    ) {
-      setError("Please fill in all required fields.");
-      return;
-    }
+    const errors = collectErrors();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     const formData = new FormData();
     const projectData = {
-      title: projectName,
+      title: projectName.trim(),
       projectTime: Number(projectTime),
-      description: projectDescription,
+      description: projectDescription.trim(),
       employees: assignedEmployees,
-      startDate: startDate?.toISOString(),
-      endDate: endDate?.toISOString(),
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     };
-    console.log("project data", projectData);
-    console.log("image", image);
 
     formData.append("data", JSON.stringify(projectData));
-    if (image) formData.append("images", image);
+    formData.append("images", image);
     if (audioFile) formData.append("audio", audioFile);
 
     try {
       const response = await createProject(formData).unwrap();
-      console.log("api response", response);
       if (response.success) {
         toast.success("Project created successfully!");
-
         setProjectName("");
         setStartDate(null);
         setEndDate(null);
         setProjectTime("");
         setProjectDescription("");
+        setAssignedEmployees([]);
         setImage(null);
         setImagePreview(null);
         setAudioFile(null);
         setAudioPreview(null);
-        setError("");
+        setFieldErrors({});
       }
     } catch (err) {
-      console.log(err);
-      toast.error("Failed to create project. Please try again.");
+      toast.error(err?.data?.message || "Failed to create project. Please try again.");
     }
   };
 
-  const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    setFilteredEmployees(
-      employees.filter((employee) =>
-        employee.toLowerCase().includes(query.toLowerCase())
-      )
-    );
-  };
-
-  // useEffect(() => {
-  //   setFilteredEmployees(employees);
-  // }, [employees]);
+  const search = searchQuery.trim().toLowerCase();
+  const visibleEmployees = search
+    ? employees.filter((employee) => employee.name?.toLowerCase().includes(search))
+    : employees;
 
   if (isLoading) {
     return (
@@ -178,53 +236,81 @@ const CreateProject = () => {
 
   return (
     <div className="px-10 py-8 bg-[#efefef] h-full">
-      <p className="text-xl font-medium mb-5">Create New Projects Template</p>
+      <p className="text-xl font-medium">Create project</p>
+      <p className="text-sm text-[#545454] mb-5">
+        This sets the project’s name, dates, total hours, and who can track time on it.
+      </p>
 
       <div className="bg-white px-6 py-10 rounded-lg">
-        <div className="flex flex-col xl:flex-row items-center gap-5 mb-5">
+        <div className="flex flex-col xl:flex-row items-start gap-5 mb-5">
           <div className="w-full flex flex-col gap-2">
-            <p className="font-medium">Projects Name</p>
+            <p className="font-medium">Project name *</p>
             <TextField
-              label="Enter Project Name"
+              label="Enter project name"
               variant="outlined"
               fullWidth
               value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
+              error={Boolean(fieldErrors.name)}
+              onChange={(e) => {
+                setProjectName(e.target.value);
+                clearError("name");
+              }}
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div className="w-44 flex flex-col gap-2">
-            <p className="font-medium">Start Date</p>
+            <p className="font-medium">Start date *</p>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
-                label="Select Start Date"
+                label="Select start date"
                 value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
-                renderInput={(params) => <TextField {...params} />}
+                onChange={(newValue) => {
+                  setStartDate(newValue);
+                  clearError("start");
+                }}
+                renderInput={(params) => <TextField {...params} error={Boolean(fieldErrors.start)} />}
               />
             </LocalizationProvider>
+            <FieldError message={fieldErrors.start} />
           </div>
           <div className="w-44 flex flex-col gap-2">
-            <p className="font-medium">End Date</p>
+            <p className="font-medium">End date *</p>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
-                label="Select End Date"
+                label="Select end date"
                 value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-                renderInput={(params) => <TextField {...params} />}
+                minDate={startDate || undefined}
+                onChange={(newValue) => {
+                  setEndDate(newValue);
+                  clearError("end");
+                }}
+                renderInput={(params) => <TextField {...params} error={Boolean(fieldErrors.end)} />}
               />
             </LocalizationProvider>
+            <FieldError message={fieldErrors.end} />
           </div>
           <div className="w-2/3 flex flex-col gap-2">
-            <p className="font-medium">Project Time</p>
+            <p className="font-medium">Project time *</p>
             <TextField
-              label="Enter Project Time"
+              label="Enter project time"
               variant="outlined"
+              type="number"
               value={projectTime}
-              onChange={(e) => setProjectTime(e.target.value)}
+              error={Boolean(fieldErrors.time)}
+              inputProps={{ min: 0.01, step: 0.01, max: 100000 }}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">hours</InputAdornment>,
+              }}
+              onChange={(e) => {
+                setProjectTime(e.target.value);
+                clearError("time");
+              }}
             />
+            <FieldHint>Total hours for the whole project</FieldHint>
+            <FieldError message={fieldErrors.time} />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="font-medium">Upload Photo</p>
+            <p className="font-medium">Photo *</p>
             <Button
               variant="outlined"
               component="label"
@@ -239,15 +325,21 @@ const CreateProject = () => {
               }}
             >
               <div className="flex items-center gap-1 text-[#3F80AE]">
-                <p>Upload</p>
+                <p>{image ? image.name : "Upload"}</p>
                 <LuImageUp />
               </div>
-
-              <input type="file" hidden onChange={handleImageUpload} />
+              <input
+                type="file"
+                hidden
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageUpload}
+              />
             </Button>
+            <FieldHint>JPEG, PNG, or WebP, up to 10 MB</FieldHint>
+            <FieldError message={fieldErrors.photo} />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="font-medium">Upload Audio</p>
+            <p className="font-medium">Audio</p>
             <Button
               variant="outlined"
               component="label"
@@ -261,12 +353,19 @@ const CreateProject = () => {
                 borderRadius: "4px",
               }}
             >
-              <div className="text-[#3F80AE]">
+              <div className="flex items-center gap-1 text-[#3F80AE]">
+                <p>{audioFile ? audioFile.name : "Upload"}</p>
                 <AiFillAudio className="text-xl" />
               </div>
-
-              <input type="file" hidden onChange={handleAudioUpload} />
+              <input
+                type="file"
+                hidden
+                accept="audio/mpeg,audio/mp3,audio/wav,audio/mp4,audio/x-m4a"
+                onChange={handleAudioUpload}
+              />
             </Button>
+            <FieldHint>Optional. MP3, WAV, or M4A</FieldHint>
+            <FieldError message={fieldErrors.audio} />
           </div>
           {imagePreview && (
             <div className="w-1/2">
@@ -284,82 +383,75 @@ const CreateProject = () => {
               />
             </div>
           )}
-          {/* Display error message if any */}
-          {error && <Typography color="error">{error}</Typography>}
-
-          {/* Display uploaded audio */}
           {audioPreview && (
             <div className="mt-3">
               <audio controls>
-                <source src={audioPreview} type="audio/mp3" />
+                <source src={audioPreview} />
               </audio>
             </div>
           )}
         </div>
 
         <div className="flex flex-col gap-2 mb-5">
-          <p className="font-medium">Project Description</p>
+          <p className="font-medium">Description *</p>
           <TextField
-            label="Enter Projects Description"
+            label="Enter project description"
             variant="outlined"
             multiline
             rows={4}
             fullWidth
             value={projectDescription}
-            onChange={(e) => setProjectDescription(e.target.value)}
+            error={Boolean(fieldErrors.description)}
+            onChange={(e) => {
+              setProjectDescription(e.target.value);
+              clearError("description");
+            }}
           />
+          <FieldError message={fieldErrors.description} />
         </div>
 
-        <div className="flex items-center justify-between bg-[#ECF2F7] rounded-lg">
-          <div className="flex items-center gap-2">
-            <p className="bg-[#C3D8E6] p-4 rounded-l-lg font-medium">
-              Assigned To
-            </p>
-            <div className="flex gap-2">
-              {assignedEmployees.map((id) => {
-                const employee = employees.find((emp) => emp.id === id);
-                return (
-                  <Chip
-                    key={id}
-                    label={employee.name}
-                    onDelete={() => handleRemoveEmployee(employee)}
-                    deleteIcon={<span style={{ color: "#CC0505" }}>×</span>}
-                    sx={{
-                      paddingX: "5px",
-                    }}
-                  />
-                );
-              })}
+        <div className="flex flex-col gap-2 bg-[#ECF2F7] rounded-lg p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-medium">Assigned to</p>
+              <FieldHint>Optional. These people can track time on this project.</FieldHint>
             </div>
-            <div className="flex">
-              <TextField
-                label="Mention Employee"
-                fullWidth
-                value={employeeInput}
-                onClick={() => setOpenModal(true)}
-                onChange={(e) => setEmployeeInput(e.target.value)}
-              />
-            </div>
+            <Button
+              onClick={() => {
+                setSearchQuery("");
+                setOpenModal(true);
+              }}
+              sx={{
+                bgcolor: "#3F80AE",
+                color: "white",
+                padding: "10px",
+                textTransform: "none",
+              }}
+            >
+              Add employee
+            </Button>
           </div>
-          <Button
-            onClick={handleAddEmployee}
-            disabled={!employeeInput}
-            sx={{
-              bgcolor: "#3F80AE",
-              color: "white",
-              padding: "10px",
-              textTransform: "none",
-              marginRight: "10px",
-            }}
-          >
-            Mention Employee
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {assignedEmployees.map((id) => {
+              const employee = employees.find((emp) => emp.id === id);
+              return (
+                <Chip
+                  key={id}
+                  label={employee?.name || "Employee"}
+                  onDelete={() => handleRemoveEmployee(id)}
+                  deleteIcon={<span style={{ color: "#CC0505" }}>×</span>}
+                  sx={{ paddingX: "5px" }}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
 
       <Button
         variant="contained"
         onClick={handleSubmit}
+        disabled={isCreating}
         sx={{
           float: "right",
           marginTop: "20px",
@@ -370,10 +462,9 @@ const CreateProject = () => {
           bgcolor: "#3F80AE",
         }}
       >
-        Create Project
+        {isCreating ? "Creating project..." : "Create project"}
       </Button>
 
-      {/* Modal for Employee Selection */}
       <Modal open={openModal} onClose={() => setOpenModal(false)}>
         <Box
           sx={{
@@ -389,19 +480,19 @@ const CreateProject = () => {
           }}
         >
           <TextField
-            label="Search Here"
+            label="Search by name"
             variant="outlined"
             fullWidth
             value={searchQuery}
-            onChange={handleSearch}
+            onChange={(e) => setSearchQuery(e.target.value)}
             sx={{ marginBottom: "10px", bgcolor: "#ECF2F7" }}
           />
-          {filteredEmployees && filteredEmployees.length > 0 ? (
+          {visibleEmployees.length > 0 ? (
             <List>
-              {filteredEmployees.map((employee, index) => (
+              {visibleEmployees.map((employee) => (
                 <ListItem
                   button
-                  key={index}
+                  key={employee.id}
                   onClick={() => handleSelectEmployee(employee)}
                 >
                   <ListItemText
@@ -417,25 +508,9 @@ const CreateProject = () => {
               ))}
             </List>
           ) : (
-            <List>
-              {employees.map((employee, index) => (
-                <ListItem
-                  button
-                  key={index}
-                  onClick={() => handleSelectEmployee(employee)}
-                >
-                  <ListItemText
-                    primary={employee.name}
-                    sx={{
-                      bgcolor: "#ECF2F7",
-                      padding: "10px",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                    }}
-                  />
-                </ListItem>
-              ))}
-            </List>
+            <Typography color="text.secondary">
+              {search ? "No matching employees." : "No employees to assign."}
+            </Typography>
           )}
         </Box>
       </Modal>
