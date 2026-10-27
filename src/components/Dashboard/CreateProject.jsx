@@ -306,7 +306,7 @@ const CreateProject = () => {
                 clearError("time");
               }}
             />
-            <FieldHint>Total hours for the whole project</FieldHint>
+            <FieldHint>Hours each assigned person may work on this project.</FieldHint>
             <FieldError message={fieldErrors.time} />
           </div>
           <div className="flex flex-col gap-2">
