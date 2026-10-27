@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   TableContainer,
   Table,
@@ -24,13 +24,21 @@ import { PiNotepadBold } from "react-icons/pi";
 import {
   useAllProjectsQuery,
   useDeleteProjectMutation,
-  useGetDailyAllocationsQuery,
   useGetProjectNotesQuery,
-  useSetDailyAllocationMutation,
+  useGetProjectQuery,
 } from "../../Redux/api/projectApi";
 import { toast } from "sonner";
 import AssignEmployeeModal from "../Modals/AssignEmployeeModal";
 import dayjs from "dayjs";
+
+function formatHours(value) {
+  if (value == null || value === "") return "N/A";
+  const n = Number(value);
+  if (Number.isNaN(n)) return "N/A";
+  if (Number.isInteger(n)) return `${n}h`;
+  const text = (Math.round(n * 100) / 100).toFixed(2).replace(/0+$/, "");
+  return `${text}h`;
+}
 
 export default function RunningProjects() {
   const { data: allProjectsData, isLoading, refetch } = useAllProjectsQuery();
@@ -47,17 +55,13 @@ export default function RunningProjects() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [openEditModal, setOpenEditModal] = useState(false);
-  const [planEmployee, setPlanEmployee] = useState("");
-  const [planDate, setPlanDate] = useState("");
-  const [planHours, setPlanHours] = useState("");
-  const [setDailyAllocation, { isLoading: savingPlan }] = useSetDailyAllocationMutation();
 
   const { data: projectNoteData, isLoading: loadingNotes } =
     useGetProjectNotesQuery(selectedProject?._id);
-  const { data: allocationData } = useGetDailyAllocationsQuery(selectedProject?._id, {
+  const { data: projectResponse } = useGetProjectQuery(selectedProject?._id, {
     skip: !openDetailsModal || !selectedProject?._id,
   });
-  const allocations = Array.isArray(allocationData?.data) ? allocationData.data : [];
+  const viewedProject = projectResponse?.data ?? selectedProject;
   const projectNote = projectNoteData?.data || [];
 
   console.log("projectNoteData", projectNote);
@@ -108,46 +112,6 @@ export default function RunningProjects() {
   };
 
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
-
-  useEffect(() => {
-    setPlanEmployee("");
-    setPlanDate("");
-    setPlanHours("");
-  }, [selectedProject?._id]);
-
-  const fillPlan = (row) => {
-    setPlanEmployee(row.employee);
-    setPlanDate(row.date);
-    setPlanHours(String(row.hours));
-  };
-
-  const handleSavePlan = async () => {
-    const hours = Number(planHours);
-    if (!selectedProject?._id || !planEmployee || !planDate || !(hours > 0)) return;
-    try {
-      await setDailyAllocation({
-        id: selectedProject._id,
-        data: { employee: planEmployee, date: planDate, hours },
-      }).unwrap();
-      toast.success("Daily hours saved");
-    } catch (error) {
-      toast.error(error?.data?.message || "Could not save daily hours");
-    }
-  };
-
-  const handleClearPlan = async () => {
-    if (!selectedProject?._id || !planEmployee || !planDate) return;
-    try {
-      await setDailyAllocation({
-        id: selectedProject._id,
-        data: { employee: planEmployee, date: planDate, hours: 0 },
-      }).unwrap();
-      setPlanHours("");
-      toast.success("Daily hours cleared");
-    } catch (error) {
-      toast.error(error?.data?.message || "Could not clear daily hours");
-    }
-  };
 
   const handleEditNow = () => {
     if (!selectedProject) return;
@@ -391,12 +355,12 @@ export default function RunningProjects() {
 
           {/* Project Images */}
           <div className="flex gap-2 mb-5">
-            {selectedProject?.images?.length > 0 ? (
-              selectedProject.images.map((img, idx) => (
+            {viewedProject?.images?.length > 0 ? (
+              viewedProject.images.map((img, idx) => (
                 <img
                   key={idx}
                   src={img}
-                  alt={`${selectedProject.title} ${idx + 1}`}
+                  alt={`${viewedProject.title} ${idx + 1}`}
                   className="w-1/3 rounded-lg object-cover"
                   style={{ maxHeight: "200px" }}
                 />
@@ -410,18 +374,18 @@ export default function RunningProjects() {
           <div className="flex flex-col gap-2 mb-5">
             <div>
               <p className="font-medium">Title:</p>
-              <p className="text-sm text-[#545454]">{selectedProject?.title}</p>
+              <p className="text-sm text-[#545454]">{viewedProject?.title}</p>
             </div>
             <div>
               <p className="font-medium">Company:</p>
               <p className="text-sm text-[#545454]">
-                {selectedProject?.company?.name}
+                {viewedProject?.company?.name}
               </p>
             </div>
             <div>
               <p className="font-medium">Description:</p>
               <p className="text-sm text-[#545454]">
-                {selectedProject?.description}
+                {viewedProject?.description}
               </p>
             </div>
             <div>
@@ -430,22 +394,25 @@ export default function RunningProjects() {
                 className="text-sm text-[#545454] capitalize font-medium py-1 rounded w-20 text-center"
                 style={{
                   backgroundColor:
-                    selectedProject?.status.toLowerCase() === "completed"
+                    viewedProject?.status.toLowerCase() === "completed"
                       ? "#008000"
-                      : selectedProject?.status.toLowerCase() === "pending"
+                      : viewedProject?.status.toLowerCase() === "pending"
                       ? "#FFDE00"
-                      : selectedProject?.status.toLowerCase() === "cancelled"
+                      : viewedProject?.status.toLowerCase() === "cancelled"
                       ? "#f44336"
                       : "#9e9e9e",
                 }}
               >
-                {selectedProject?.status || "N/A"}
+                {viewedProject?.status || "N/A"}
               </p>
             </div>
 
             <div className="flex items-center gap-5">
               <div className="mb-2">
-                <p className="font-medium">Time and Duration</p>
+                <p className="font-medium">Project time</p>
+                <p className="text-sm text-[#545454] mb-2">
+                  Hours each assigned person may work on this project.
+                </p>
                 <Table
                   sx={{
                     border: "1px solid #ddd",
@@ -463,21 +430,17 @@ export default function RunningProjects() {
                       <TableCell
                         sx={{ fontWeight: "600", textAlign: "center" }}
                       >
-                        Duration
+                        Date span
                       </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     <TableRow sx={{ borderBottom: "1px solid #ddd" }}>
                       <TableCell sx={{ textAlign: "center" }}>
-                        {selectedProject?.projectTime
-                          ? selectedProject.projectTime
-                          : "N/A"}
+                        {formatHours(viewedProject?.projectTime)}
                       </TableCell>
                       <TableCell sx={{ textAlign: "center" }}>
-                        {selectedProject?.duration
-                          ? selectedProject.duration
-                          : "N/A"}
+                        {formatHours(viewedProject?.duration)}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -510,16 +473,16 @@ export default function RunningProjects() {
                   <TableBody>
                     <TableRow sx={{ borderBottom: "1px solid #ddd" }}>
                       <TableCell sx={{ textAlign: "center" }}>
-                        {selectedProject?.startDate
-                          ? dayjs(selectedProject.startDate).format(
+                        {viewedProject?.startDate
+                          ? dayjs(viewedProject.startDate).format(
                               "DD-MM-YYYY"
                             )
                           : "N/A"}
                       </TableCell>
 
                       <TableCell sx={{ textAlign: "center" }}>
-                        {selectedProject?.endDate
-                          ? dayjs(selectedProject.endDate).format("DD-MM-YYYY")
+                        {viewedProject?.endDate
+                          ? dayjs(viewedProject.endDate).format("DD-MM-YYYY")
                           : "N/A"}
                       </TableCell>
                     </TableRow>
@@ -533,115 +496,22 @@ export default function RunningProjects() {
           <div className="mb-5">
             <p className="font-medium mb-2">Assigned Employees</p>
             <ul className="ml-5 list-disc">
-              {selectedProject?.employees?.length > 0 ? (
-                selectedProject.employees.map((employee, idx) => (
-                  <li key={idx} className="text-sm text-[#545454]">
+              {viewedProject?.employees?.length > 0 ? (
+                viewedProject.employees.map((employee, idx) => (
+                  <li key={employee._id || idx} className="text-sm text-[#545454]">
                     {employee.name}{" "}
                     {employee.email ? `(${employee.email})` : ""}
+                    {" — "}
+                    {formatHours(employee.workedHours ?? 0)} / {formatHours(viewedProject.projectTime)}
+                    {Number(employee.overtimeHours) > 0
+                      ? ` · ${formatHours(employee.overtimeHours)} overtime`
+                      : ""}
                   </li>
                 ))
               ) : (
                 <p className="text-sm text-[#545454]">No employees assigned</p>
               )}
             </ul>
-          </div>
-
-          <div className="mb-5">
-            <p className="font-medium mb-2">Daily hours</p>
-            <div className="flex flex-wrap items-end gap-3 mb-3">
-              <FormControl size="small" sx={{ minWidth: 200 }} disabled={!selectedProject?.employees?.length}>
-                <InputLabel>Employee</InputLabel>
-                <Select
-                  label="Employee"
-                  value={planEmployee}
-                  onChange={(event) => setPlanEmployee(event.target.value)}
-                >
-                  <MenuItem value="" sx={{ display: "none" }} />
-                  {(selectedProject?.employees || []).map((employee) => (
-                    <MenuItem key={employee._id} value={employee._id}>
-                      {employee.name}
-                    </MenuItem>
-                  ))}
-                  {planEmployee &&
-                  !(selectedProject?.employees || []).some((employee) => employee._id === planEmployee) ? (
-                    <MenuItem value={planEmployee}>
-                      {allocations.find((row) => row.employee === planEmployee)?.name || "Employee"}
-                    </MenuItem>
-                  ) : null}
-                </Select>
-              </FormControl>
-              <label className="flex flex-col text-sm text-[#545454]">
-                Date
-                <input
-                  type="date"
-                  value={planDate}
-                  disabled={!selectedProject?.employees?.length}
-                  onChange={(event) => setPlanDate(event.target.value)}
-                  className="border border-[#ddd] rounded px-2 h-10"
-                />
-              </label>
-              <label className="flex flex-col text-sm text-[#545454]">
-                Hours
-                <input
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={planHours}
-                  disabled={!selectedProject?.employees?.length}
-                  onChange={(event) => setPlanHours(event.target.value)}
-                  className="border border-[#ddd] rounded px-2 h-10 w-24"
-                />
-              </label>
-              <Button
-                variant="contained"
-                disabled={
-                  savingPlan ||
-                  !selectedProject?.employees?.length ||
-                  !planEmployee ||
-                  !planDate ||
-                  !(Number(planHours) > 0)
-                }
-                onClick={handleSavePlan}
-                sx={{ bgcolor: "#3F80AE", textTransform: "none", height: 40 }}
-              >
-                Save
-              </Button>
-              <Button
-                variant="outlined"
-                disabled={savingPlan || !planEmployee || !planDate}
-                onClick={handleClearPlan}
-                sx={{ textTransform: "none", height: 40 }}
-              >
-                Clear
-              </Button>
-            </div>
-            {allocations.length > 0 ? (
-              <Table sx={{ border: "1px solid #ddd", maxWidth: 520 }}>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "#C3D8E6" }}>
-                    <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Hours</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {allocations.map((row) => (
-                    <TableRow
-                      key={`${row.employee}-${row.date}`}
-                      hover
-                      onClick={() => fillPlan(row)}
-                      sx={{ cursor: "pointer" }}
-                    >
-                      <TableCell>{row.name || "Employee"}</TableCell>
-                      <TableCell>{row.date}</TableCell>
-                      <TableCell>{row.hours}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className="text-sm text-[#545454]">No daily hours saved</p>
-            )}
           </div>
 
           {/* Close Button */}

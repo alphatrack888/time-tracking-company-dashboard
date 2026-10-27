@@ -42,12 +42,6 @@ const EmployeeLineChart = ({ chartData }) => {
             stroke="#3F80AE"
             name="Break Time (hrs)"
           />
-          <Line
-            type="monotone"
-            dataKey="plannedHours"
-            stroke="#C47B2A"
-            name="Planned hours"
-          />
         </LineChart>
       </ResponsiveContainer>
     </div>
